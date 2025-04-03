@@ -12,7 +12,8 @@ const generatejwt = (payload, secretKey) => {
 };
 
 // Signup handler
-exports.userSignup = async (req, res) => {
+exports.
+userSignup = async (req, res) => {
   try {
     const { userName, email, password } = req.body;
 
