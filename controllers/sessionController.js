@@ -26,7 +26,7 @@ exports.userSignup = async (req, res) => {
 
     // ✅ Correctly extract values from nested objects
     const { 
-      personalDetails: { userName, email, password, gender, contactno, address, totalFamilyIncome, DOB, maritalStatus, alternateContactNo, dependents, cibilScore } = {},
+      personalDetails: { userName, email, password, gender, contactno, address, totalFamilyIncome, DOB, maritalStatus,employmentStatus, alternateContactNo, dependents, cibilScore } = {},
       employmentDetails: { designation, companyName, companyAddress, companyContactNo, employmentType, workExperience, totalIncomePerMonth } = {},
       userCredentials: { email: credentialEmail, password: credentialPassword } = {}
     } = req.body;
@@ -67,6 +67,7 @@ exports.userSignup = async (req, res) => {
         totalFamilyIncome,
         DOB,
         maritalStatus,
+        employmentStatus,
         alternateContactNo,
         dependents,
         cibilScore,
