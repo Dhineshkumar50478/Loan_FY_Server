@@ -2,8 +2,6 @@ const mongoose =require('mongoose')
 
 const userDetailsSchema=mongoose.Schema({
   personalDetails:{ userName:String,
-    email:String,
-    password:String,
     gender:String,
     contactno:String,
     address:String,
@@ -11,6 +9,7 @@ const userDetailsSchema=mongoose.Schema({
     DOB:String,
     maritalStatus:String,
     alternateContactNo:String,
+    employmentStatus:String,
     dependents:Number,
     cibilScore:Number,},
   employmentDetails:{
