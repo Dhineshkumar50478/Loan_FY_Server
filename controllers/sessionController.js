@@ -24,42 +24,48 @@ exports.userSignup = async (req, res) => {
       return res.status(400).json({ message: "Invalid JSON input." });
     }
 
-    // ✅ Correctly extract values from nested objects
+    // ✅ Extract values correctly
     const { 
-      personalDetails: { userName, email, password, gender, contactno, address, totalFamilyIncome, DOB, maritalStatus,employmentStatus, alternateContactNo, dependents, cibilScore } = {},
+      personalDetails: { userName, gender, contactno, address, totalFamilyIncome, DOB, maritalStatus, employmentStatus, alternateContactNo, dependents, cibilScore } = {},
       employmentDetails: { designation, companyName, companyAddress, companyContactNo, employmentType, workExperience, totalIncomePerMonth } = {},
-      userCredentials: { email: credentialEmail, password: credentialPassword } = {}
+      userCredentials: { email, password }
     } = req.body;
 
-    // ✅ Use `credentialEmail` and `credentialPassword` if not found in `personalDetails`
-    const finalEmail = email || credentialEmail;
-    const finalPassword = password || credentialPassword;
+    // ✅ Ensure email is lowercase and trimmed
+    const finalEmail = (email || "").trim().toLowerCase();
+    const finalPassword = password || "";
 
     if (!userName || !finalEmail || !finalPassword) {
       return res.status(400).json({ 
         message: "Missing required fields.", 
-        receivedFields: req.body // ✅ Logs what was received
+        receivedFields: req.body
       });
     }
 
-    // Check if user already exists
-    const userExist = await userDetailsModel.findOne({ "personalDetails.email": finalEmail });
+    // ✅ Log for debugging
+    console.log("Checking if user exists with email:", finalEmail);
+
+    // ✅ Check if user already exists (No regex, uses indexed search)
+    const userExist = await userDetailsModel.findOne({
+      "userCredentials.email": finalEmail
+    });
+
     if (userExist) {
-      return res.status(409).json({ message: "User already exists." });
+      return res.status(200).json({ message: "User already exists." });
     }
 
-    // Hash the password before saving
+    // ✅ Hash the password before storing
     const hashedPassword = await bcrypt.hash(finalPassword, 10);
 
-    // Define role based on email
+    // ✅ Define role based on email
     const admins = ["dineshselvaraj50478@gmail.com", "dineshnayak50478@gmail.com"];
     const role = admins.includes(finalEmail) ? "Admin" : "User";
 
-    // Create new user entry
+    // ✅ Save user data
     const userData = await userDetailsModel.create({
       personalDetails: {
         userName,
-        email: finalEmail,
+        email: finalEmail, // ✅ Email stored in lowercase
         password: hashedPassword,
         gender,
         contactno,
@@ -83,26 +89,26 @@ exports.userSignup = async (req, res) => {
       },
       userCredentials: {
         email: finalEmail,
-        password: hashedPassword, // Store hashed password here too
+        password: hashedPassword, // ✅ Store hashed password here too
       },
       role,
     });
 
-    // Generate JWT token
+    // ✅ Generate JWT token
     const token = generatejwt({ userName, email: finalEmail, role }, secretKey);
 
-    // Set cookies
+    // ✅ Set secure cookies
     res.cookie("jwt", token, {
       maxAge: 3600000,
       httpOnly: true,
-      secure: false, // Change to true in production with HTTPS
+      secure: false, // Change to true in production
       sameSite: "Strict",
     });
 
     res.cookie("role", role, {
       maxAge: 3600000,
       httpOnly: true,
-      secure: false, // Change to true in production with HTTPS
+      secure: false,
       sameSite: "Strict",
     });
 
@@ -112,6 +118,8 @@ exports.userSignup = async (req, res) => {
     res.status(500).json({ message: "Server error: " + err.message });
   }
 };
+
+
 
 
 // Signin handler
