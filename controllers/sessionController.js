@@ -132,12 +132,12 @@ exports.userSignin = async (req, res) => {
       return res.status(400).json({ message: "Email and password are required." });
     }
 
-    const userExist = await userDetailsModel.findOne({ "personalDetails.email": email });
+    const userExist = await userDetailsModel.findOne({ "userCredentials.email": email });
     if (!userExist) {
       return res.status(401).json({ message: "Invalid credentials." });
     }
 
-    const validPassword = await bcrypt.compare(password, userExist.personalDetails.password);
+    const validPassword = await bcrypt.compare(password, userExist.userCredentials.password);
     if (!validPassword) {
       return res.status(401).json({ message: "Invalid credentials." });
     }

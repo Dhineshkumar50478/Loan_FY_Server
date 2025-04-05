@@ -27,8 +27,8 @@ const userDetailsSchema=mongoose.Schema({
   },
   role:String
 },{
-  Schema:"userDetails"
+  Schema:"userdetails"
 })
 
-const userDetailsModel=mongoose.model("userDetails",userDetailsSchema)
+const userDetailsModel=mongoose.model("userdetails",userDetailsSchema)
 module.exports=userDetailsModel;
