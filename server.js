@@ -15,7 +15,8 @@ mongoose.connect(process.env.CONNECTION_STRING).then(()=>{
 
 const app=express();
 app.use(express.json())
-app.use(cors())
+app.use(cors({ origin: "*" }));
+
 
 
 app.use("/user",sessionRouter)
