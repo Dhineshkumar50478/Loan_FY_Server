@@ -15,7 +15,13 @@ mongoose.connect(process.env.CONNECTION_STRING).then(()=>{
 
 const app=express();
 app.use(express.json())
-app.use(cors({ origin: "*" }));
+app.use(cors({
+  origin: (origin, callback) => {
+    callback(null, true); // Accept all origins
+  },
+  credentials: true, // If you're using cookies
+}));
+
 
 
 

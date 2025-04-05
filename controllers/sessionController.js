@@ -154,7 +154,7 @@ exports.userSignin = async (req, res) => {
       sameSite: "Strict",
     });
 
-    res.status(200).json({ message: "Access granted.", token });
+    res.status(200).json({ message: "Login Successfully.", token });
   } catch (err) {
     console.error("Error:", err);
     res.status(500).json({ message: "Server error: " + err.message });
