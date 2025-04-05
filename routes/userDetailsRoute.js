@@ -9,10 +9,10 @@ const {
 
 const userDetailsrouter = express.Router();
 
-router.post("/users", createUser);
-router.get("/users", getAllUsers);
-router.get("/users/:id", getUserById);
-router.put("/users/:id", updateUser);
-router.delete("/users/:id", deleteUser);
+router.post("/user", createUser);
+router.get("/user", getAllUsers);
+router.get("/user/:id", getUserById);
+router.put("/user/", updateUser);
+router.delete("/user/:id", deleteUser);
 
 module.exports = userDetailsrouter;

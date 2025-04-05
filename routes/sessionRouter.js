@@ -1,5 +1,5 @@
 const express = require('express');
-const {userSignin,userSignup} = require('../controllers/sessionController');
+const {userSignin,userSignup, updateUserPassword} = require('../controllers/sessionController');
 const {protected, logOut} =require('../middlewares/protectedMiddleware');
 const { authorize } = require('../middlewares/authorizationMiddleware');
 
@@ -11,6 +11,7 @@ sessionRouter.post('/signup', userSignup);
 
 sessionRouter.get("/logout",authorize("Admin"),logOut)
 sessionRouter.get('/protect',protected)
+sessionRouter.post('/updatePassword',updateUserPassword)
 
 
 module.exports = sessionRouter;
