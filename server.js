@@ -4,6 +4,7 @@ const dotenv=require('dotenv')
 const cors=require('cors');
 const cookieparser=require('cookie-parser');
 const sessionRouter = require('./routes/sessionRouter');
+const otpRouter = require('./routes/otpRouter');
 
 dotenv.config()
 const port=process.env.PORT||3002;
@@ -26,6 +27,7 @@ app.use(cors({
 
 
 app.use("/user",sessionRouter)
+app.use("/otp",otpRouter)
 
 
 app.listen(port,()=>{
