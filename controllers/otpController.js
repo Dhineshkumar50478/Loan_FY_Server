@@ -5,8 +5,8 @@ const otpModel = require("../models/userOtpModel");
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'dineshselvaraj50478@gmail.com',
-    pass: 'pqzxjlcornlxvjvi'
+    user: 'loaneaseofficial@gmail.com',
+    pass: 'sggytsirvltpwule'
   },
 });
 
@@ -30,7 +30,7 @@ exports.sendOtp = async (req, res) => {
 
     // Send Email
     await transporter.sendMail({
-      from: 'Loan Ease <your_email@gmail.com>',
+      from: 'loaneaseofficial@gmail.com',
       to: email,
       subject: 'Your OTP Code',
       text: `Your OTP is ${otpCode}. It will expire in 5 minutes.`
