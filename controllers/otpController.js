@@ -1,12 +1,14 @@
 const nodemailer = require('nodemailer');
 const otpModel = require("../models/userOtpModel");
+const dotEnv=require('dotenv');
+dotEnv.config()
 
 // Nodemailer setup
 const transporter = nodemailer.createTransport({
   service: 'gmail',
   auth: {
-    user: 'loaneaseofficial@gmail.com',
-    pass: 'sggytsirvltpwule'
+    user:process.env.EMAIL_USER,
+    pass:process.env.EMAIL_PASS
   },
 });
 
