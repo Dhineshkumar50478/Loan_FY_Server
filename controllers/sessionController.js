@@ -26,7 +26,7 @@ exports.userSignup = async (req, res) => {
 
     // ✅ Extract values correctly
     const { 
-      personalDetails: { userName, gender, contactno, address, totalFamilyIncome, DOB, maritalStatus, employmentStatus, alternateContactNo, dependents, cibilScore } = {},
+      personalDetails: { userName, gender, contactno, address, totalFamilyIncome, DOB,educationStatus,residentialStatus, maritalStatus, employmentStatus, alternateContactNo, dependents, cibilScore } = {},
       employmentDetails: { designation, companyName, companyAddress, companyContactNo, employmentType, workExperience, totalIncomePerMonth } = {},
       userCredentials: { email, password }
     } = req.body;
@@ -72,6 +72,8 @@ exports.userSignup = async (req, res) => {
         address,
         totalFamilyIncome,
         DOB,
+        educationStatus,
+        residentialStatus,
         maritalStatus,
         employmentStatus,
         alternateContactNo,

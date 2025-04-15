@@ -7,6 +7,8 @@ const userDetailsSchema=mongoose.Schema({
     address:String,
     totalFamilyIncome:String,
     DOB:String,
+    educationStatus:String,
+    residentialStatus:String,
     maritalStatus:String,
     alternateContactNo:String,
     employmentStatus:String,
