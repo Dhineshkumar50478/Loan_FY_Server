@@ -2,7 +2,7 @@ const express=require('express');
 const mongoose =require('mongoose');
 const dotenv=require('dotenv')
 const cors=require('cors');
-const cookieparser=require('cookie-parser');
+// const cookieparser=require('cookie-parser');
 const sessionRouter = require('./routes/sessionRouter');
 const otpRouter = require('./routes/otpRouter');
 

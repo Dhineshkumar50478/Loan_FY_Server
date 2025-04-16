@@ -22,18 +22,41 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-// Get a single user by ID
-const getUserById = async (req, res) => {
-  try {
-    const user = await userDetailsModel.findById(req.params.id);
-    if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    res.status(200).json(user);
-  } catch (error) {
-    res.status(500).json({ message: "Error fetching user", error: error.message });
-  }
-};
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+                                            
+
+
+
+
 
 // Update user details
 const updateUser = async (req, res) => {
@@ -66,3 +89,4 @@ const deleteUser = async (req, res) => {
 };
 
 module.exports = { createUser, getAllUsers, getUserById, updateUser, deleteUser };
+
