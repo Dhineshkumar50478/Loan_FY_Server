@@ -191,6 +191,30 @@ exports.updateUserPassword = async (req, res) => {
   }
 };
 
+exports.getUserById =async (req, res) => {
+  console.log(req.params.id);
+  
+  try {
+    const user = await userDetailsModel.findOne({ 'userCredentials.email': req.params.id })
+      .select('personalDetails.gender personalDetails.maritalStatus personalDetails.dependents personalDetails.educationStatus personalDetails.residentialStatus personalDetails.employmentStatus personalDetails.cibilScore employmentDetails.totalIncomePerMonth');
+    
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.status(200).json({
+      gender: user.personalDetails.gender,
+      maritalStatus: user.personalDetails.maritalStatus,
+      dependents: user.personalDetails.dependents,
+      educationStatus: user.personalDetails.educationStatus,
+      residentialStatus: user.personalDetails.residentialStatus,
+      employmentStatus: user.personalDetails.employmentStatus,
+      cibilScore: user.personalDetails.cibilScore,
+      totalIncomePerMonth: user.employmentDetails.totalIncomePerMonth
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+}
+
 
 
 
