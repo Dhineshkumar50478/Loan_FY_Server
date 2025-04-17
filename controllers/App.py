@@ -70,18 +70,24 @@ model_rf.fit(X_train, y_train)
 
 # Prediction function
 def predict_loan_eligibility(manual_input):
+    print("Manual input received for prediction:", manual_input)
+
     input_df = pd.DataFrame([manual_input])
 
-    # Apply label encoding
+    # Apply label encoding with error handling
     for col, le in label_encoders.items():
-        input_df[col] = le.transform([manual_input[col]])
+        try:
+            input_df[col] = le.transform([manual_input[col]])
+        except ValueError as e:
+            print(f"Encoding error in column '{col}' with value '{manual_input[col]}':", e)
+            raise ValueError(f"Invalid input for {col}: '{manual_input[col]}'. Expected one of: {list(le.classes_)}")
 
     input_df['Debt_to_Income'] = (input_df['Existing_EMI'] + input_df['Rent_Amount']) / input_df['Total_Income']
 
     rf_prob = model_rf.predict_proba(input_df)[:, 1][0]
-    custom_threshold=0.45
+    custom_threshold = 0.45
     b = "Approved" if rf_prob >= custom_threshold else "Rejected"
-    print('rfa prediction probability', rf_prob, 'status', b)
+    print('RandomForest prediction probability:', rf_prob, '| Status:', b)
 
     xgb_prob = best_model.predict_proba(input_df)[:, 1][0]
     custom_threshold = 0.36
@@ -118,11 +124,12 @@ def predict_loan_eligibility(manual_input):
             reasons.extend(fallback)
 
     return {
-    "status": str(status),
-    "probability": float(round(xgb_prob, 2)),
-    "rf_probability": float(round(rf_prob, 2)),
-    "reasons": [str(reason) for reason in reasons]
-}
+        "status": str(status),
+        "probability": float(round(xgb_prob, 2)),
+        "rf_probability": float(round(rf_prob, 2)),
+        "reasons": [str(reason) for reason in reasons]
+    }
+
 
 # Flask endpoint
 @app.route('/api/predict', methods=['POST'])
