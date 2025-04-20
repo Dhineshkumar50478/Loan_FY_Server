@@ -14,16 +14,19 @@ app.use(express.urlencoded({ extended: true }));
 
 const allowedOrigins = ['http://localhost:5173', 'https://loan-port-website-git-main-dhineshkumars-projects.vercel.app/'];
 
-app.use(cors({
+const corsOptions = {
   origin: function (origin, callback) {
+    console.log('Origin:', origin);  // Log the incoming origin
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
     }
   },
-  credentials: true
-}));
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 
 
 // ✅ MongoDB connection
