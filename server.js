@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-const allowedOrigins = ['http://localhost:5173', 'https://yourfrontend.com'];
+const allowedOrigins = ['http://localhost:5173', 'https://yourfrontend.comhttps://loan-port-website-git-main-dhineshkumars-projects.vercel.app/'];
 
 app.use(cors({
   origin: function (origin, callback) {
