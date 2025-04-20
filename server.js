@@ -2,31 +2,39 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const dotenv=require("dotenv")
-const bcrypt=require("bcrypt")
-dotenv.config()
+const dotenv = require("dotenv");
+const bcrypt = require("bcrypt");
 
+dotenv.config();
 const app = express();
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-
-const allowedOrigins = ['http://localhost:5173',"http://localhost:5174", 'https://loan-port-website-git-main-dhineshkumars-projects.vercel.app/'];
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://loan-port-website-git-main-dhineshkumars-projects.vercel.app"
+];
 
 const corsOptions = {
   origin: function (origin, callback) {
-    console.log('Origin:', origin);  // Log the incoming origin
+    console.log("Origin:", origin);
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error("Not allowed by CORS"));
     }
   },
   credentials: true,
 };
 
+// ✅ Apply correct CORS options here
 app.use(cors(corsOptions));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// your routes here...
+
+
 
 
 // ✅ MongoDB connection
