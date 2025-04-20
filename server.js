@@ -12,6 +12,19 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+const allowedOrigins = ['http://localhost:5173', 'https://yourfrontend.com'];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
+}));
+
 
 // ✅ MongoDB connection
 const connectDB = async () => {
@@ -38,7 +51,7 @@ const ProfileSchema = new mongoose.Schema({
   Employment_Status: String,
   Total_Income: Number,
   Residential_Status: String,
-  Rent_Amount: Number,
+  Rent_Amount: { type: Number, default: 0 },
   Cibil_Score: Number,
   Contact_No: String,
   Address: String,
