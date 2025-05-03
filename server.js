@@ -2,45 +2,19 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
-const bcrypt = require("bcrypt");
 
-dotenv.config();
 const app = express();
 
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "https://loan-port-website-git-main-dhineshkumars-projects.vercel.app"
-];
-
-const corsOptions = {
-  origin: function (origin, callback) {
-    console.log("Origin:", origin);
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("Not allowed by CORS"));
-    }
-  },
-  credentials: true,
-};
-
-// ✅ Apply correct CORS options here
-app.use(cors(corsOptions));
-
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
-// your routes here...
-
-
-
 
 // ✅ MongoDB connection
 const connectDB = async () => {
   try {
-    await mongoose.connect(process.env.CONNECTION_STRING);
+    await mongoose.connect(
+      "mongodb+srv://dineshselvaraj50478:Dhinesh8833@cluster0.f9s6a.mongodb.net/profileDB?retryWrites=true&w=majority&appName=Cluster0"
+    );
     console.log("✅ MongoDB connected successfully");
   } catch (err) {
     console.error("❌ MongoDB connection failed:", err.message);
@@ -62,7 +36,7 @@ const ProfileSchema = new mongoose.Schema({
   Employment_Status: String,
   Total_Income: Number,
   Residential_Status: String,
-  Rent_Amount: { type: Number, default: 0 },
+  Rent_Amount: Number,
   Cibil_Score: Number,
   Contact_No: String,
   Address: String,
@@ -72,83 +46,99 @@ const ProfileSchema = new mongoose.Schema({
   Existing_EMI: { type: Number, default: 0 },
   Email: { type: String, required: true },
   Password: { type: String, required: true },
-  otp:Number,
-  otpExpires:Number,
-
-  // documents: {
-  //   aadhar: { type: Buffer },
-  //   pan: { type: Buffer },
-  //   employmentId: { type: Buffer },
-  //   salarySlips: { type: Buffer }
-  // }
-
+  Loan_Emi: { type: Number, default: 0 }, //new field added loan_emi
+  Loan_Status: { type: String, default: "" }, // new field added loan_status
 });
 
 const Profile = mongoose.model("Profile", ProfileSchema);
 
+const approvedLoanSchema = new mongoose.Schema({
+  user_id: { type: String, required: true },
+  Name: { type: String, required: true },
+  Total_Income: { type: Number, required: true },
+  Loan_Type: { type: String, required: true },
+  Loan_Amount: { type: Number, required: true },
+  Loan_Term: { type: Number, required: true },
+  Loan_Emi: { type: Number, required: true },
+  approval_date: { type: Date, default: Date.now },
+});
+
+const ApprovedLoan = mongoose.model("ApprovedLoan", approvedLoanSchema);
 
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL,       // ✅ Your email
-    pass: process.env.PASS,          // ✅ App-specific password (not your email login pwd)
+    user: "subramaniyamsvss@gmail.com", // ✅ Your email
+    pass: "eaar wunc qvtu ppaf", // ✅ App-specific password (not your email login pwd)
   },
 });
 
-
 app.post("/profile_completion", async (req, res) => {
-  const {
-    Name,
-    DOB,
-    Gender,
-    Maritial_Status,
-    Dependents,
-    Age,
-    Education,
-    Employment_Status,
-    Total_Income,
-    Residential_Status,
-    Rent_Amount,
-    Cibil_Score,
-    Contact_No,
-    Address,
-    Email,
-    Password,
-  } = req.body.eli_values;
-
+  user_name = req.body.eli_values.Name;
+  dob = req.body.eli_values.DOB;
+  gender = req.body.eli_values.Gender;
+  martial_status = req.body.eli_values.Maritial_Status;
+  dependents = req.body.eli_values.Dependents;
+  age = req.body.eli_values.Age;
+  education = req.body.eli_values.Education;
+  employment_status = req.body.eli_values.Employment_Status;
+  income = req.body.eli_values.Total_Income;
+  residential_status = req.body.eli_values.Residential_Status;
+  rent_amount = req.body.eli_values.Rent_Amount;
+  cibil_score = req.body.eli_values.Cibil_Score;
+  contact_no = req.body.eli_values.Contact_No;
+  address = req.body.eli_values.Address;
   console.log(
-    Name,
-    DOB,
-    Gender,
-    Maritial_Status,
-    Dependents,
-    Age,
-    Education,
-    Employment_Status,
-    Total_Income,
-    Residential_Status,
-    Rent_Amount,
-    Cibil_Score,
-    Contact_No,
-    Address,
+    user_name,
+    dob,
+    gender,
+    martial_status,
+    dependents,
+    age,
+    education,
+    employment_status,
+    income,
+    residential_status,
+    rent_amount,
+    cibil_score,
+    contact_no,
+    address
   );
-
   try {
-    // 1️⃣ Get last profile and generate new ID
+    const {
+      Name,
+      DOB,
+      Gender,
+      Maritial_Status,
+      Dependents,
+      Age,
+      Education,
+      Employment_Status,
+      Total_Income,
+      Residential_Status,
+      Rent_Amount,
+      Cibil_Score,
+      Contact_No,
+      Address,
+      Email,
+      Password,
+    } = req.body.eli_values;
+
+    // 1️⃣ Get the last created profile
     const lastProfile = await Profile.findOne().sort({ user_id: -1 }).exec();
-    let newIdNumber = 1;
+
+    // 2️⃣ Extract the number and increment it
+    let newIdNumber = 1; // Default for first user
     if (lastProfile && lastProfile.user_id) {
-      const lastId = lastProfile.user_id.replace("LP", "");
+      const lastId = lastProfile.user_id.replace("LP", ""); // Remove LP
       newIdNumber = parseInt(lastId) + 1;
     }
+
+    // 3️⃣ Format the new ID as LP001, LP002, etc.
     const user_id = `LP${String(newIdNumber).padStart(3, "0")}`;
 
-    // 2️⃣ Hash password
-    const hashedPassword = await bcrypt.hash(Password, 10);
-
-    // 3️⃣ Create new profile
     const newProfile = new Profile({
       user_id,
       Name,
@@ -169,14 +159,14 @@ app.post("/profile_completion", async (req, res) => {
       Loan_Term: 0,
       Existing_EMI: 0,
       Email,
-      Password: hashedPassword, // 🔒 Secure password
+      Password,
     });
 
     await newProfile.save();
 
     // ✅ Send Email with user_id
     const mailOptions = {
-      from: process.env.EMAIL,
+      from: "subramaniyamsvss@gmail.com",
       to: Email,
       subject: "🎉 Profile Created Successfully!",
       html: `
@@ -191,8 +181,8 @@ app.post("/profile_completion", async (req, res) => {
 
     await transporter.sendMail(mailOptions);
     console.log("✅ Email sent to", Email);
-    console.log("✅ Profile Saved:", newProfile);
 
+    console.log("✅ Profile Saved:", newProfile);
     res.status(201).json({ message: "Profile saved successfully" });
   } catch (error) {
     console.error("❌ Error saving profile:", error.message);
@@ -246,7 +236,7 @@ app.get("/get_user/:user_id", async (req, res) => {
   }
 });
 
-app.get('/get_user/:userId', async (req, res) => {
+app.get("/get_user/:userId", async (req, res) => {
   try {
     const { userId } = req.params;
     const user = await User.findOne({ user_id: userId });
@@ -261,7 +251,6 @@ app.get('/get_user/:userId', async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 });
-
 
 app.put("/update_profile", async (req, res) => {
   const updatedProfile = req.body;
@@ -288,9 +277,8 @@ app.put("/update_profile", async (req, res) => {
   }
 });
 
-
 const multer = require("multer");
-const storage = multer.memoryStorage();  // Store files as Buffer
+const storage = multer.memoryStorage(); // Store files as Buffer
 const upload = multer({ storage: storage });
 
 app.post(
@@ -322,8 +310,8 @@ app.post(
 
       // 🔹 Compose the email with attachments
       const mailOptions = {
-        from: process.env.EMAIL,
-        to: "loaneaseofficial@gmail.com",
+        from: "subramaniyamsvss@gmail.com",
+        to: "valarshan2000@gmail.com",
         subject: `📄 Document Submission for User ID: ${user_id}`,
         html: `
           <h3>📌 Profile Summary</h3>
@@ -361,7 +349,9 @@ app.post(
       await transporter.sendMail(mailOptions);
       console.log("✅ Documents emailed successfully");
 
-      res.status(200).json({ message: "Documents emailed to verification team" });
+      res
+        .status(200)
+        .json({ message: "Documents emailed to verification team" });
     } catch (error) {
       console.error("❌ Error sending documents:", error);
       res.status(500).json({ message: "Server error" });
@@ -369,15 +359,37 @@ app.post(
   }
 );
 
+app.post("/update_loan_status", async (req, res) => {
+  const { user_id, emi } = req.body;
+  console.log(user_id, emi);
+
+  try {
+    const result = await Profile.findOneAndUpdate(
+      { user_id },
+      { Loan_Emi: emi, Loan_Status: "Pending" },
+      { new: true }
+    );
+
+    if (!result) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    res.status(200).json({ message: "Loan status updated", data: result });
+  } catch (err) {
+    console.error("❌ Error updating loan status:", err);
+    res.status(500).json({ message: "Server error", error: err });
+  }
+});
+
 app.post("/contact-msg", (req, res) => {
   const { name, email, query } = req.body;
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: "gmail",
     auth: {
-      user: process.env.EMAIL,
-      pass: process.env.PASS
-    }
+      user: "subramaniyamsvss@gmail.com",
+      pass: "fqkz oibw gxjr whyd",
+    },
   });
 
   const emailContent = `
@@ -407,48 +419,44 @@ app.post("/contact-msg", (req, res) => {
   `;
 
   const mailOptions = {
-    from: 'subramaniyamsvss@gmail.com',
-    to: 'subramaniyamsvss@gmail.com',
-    subject: 'Client Query',
-    html: emailContent
+    from: "subramaniyamsvss@gmail.com",
+    to: "subramaniyamsvss@gmail.com",
+    subject: "Client Query",
+    html: emailContent,
   };
 
-  transporter.sendMail(mailOptions)
+  transporter
+    .sendMail(mailOptions)
     .then(() => {
-      console.log('Mail sent successfully');
-      res.status(200).json({ message: 'Mail sent successfully' });
+      console.log("Mail sent successfully");
+      res.status(200).json({ message: "Mail sent successfully" });
     })
     .catch((err) => {
       console.error("Error sending mail:", err);
-      res.status(500).json({ message: 'Error sending email' });
+      res.status(500).json({ message: "Error sending email" });
     });
 });
-
 
 app.post("/signin", async (req, res) => {
   const { userid, password } = req.body;
 
   // Validation
   if (!userid || !password) {
-    return res.status(400).json({ message: "User ID and Password are required." });
+    return res
+      .status(400)
+      .json({ message: "User ID and Password are required." });
   }
 
   try {
-    // Find user by user_id
-    const user = await Profile.findOne({ user_id: userid });
+    // Match with MongoDB fields
+    const user = await Profile.findOne({ user_id: userid, Password: password });
 
     if (!user) {
-      return res.status(401).json({ message: "Invalid credentials. Please try again." });
+      return res
+        .status(401)
+        .json({ message: "Invalid credentials. Please try again." });
     }
 
-    // Compare entered password with hashed password
-    const isMatch = await bcrypt.compare(password, user.Password);
-
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials. Please try again." });
-    }
-
-    // Prepare user data to send
     const userData = {
       user_id: user.user_id,
       Name: user.Name,
@@ -467,93 +475,138 @@ app.post("/signin", async (req, res) => {
   }
 });
 
+// ✅ GET profiles based on loan status
+app.get("/api/profiles", async (req, res) => {
+  try {
+    const status = req.query.status || "Pending";
+    
+    // Fetch from the correct collection based on status
+    let profiles;
+    if (status === "Approved") {
+      profiles = await ApprovedLoan.find();  // Fetch data from ApprovedLoan collection
+    } else {
+      profiles = await Profile.find({ Loan_Status: status });  // Fetch data from Profile collection
+    }
+    
+    res.json(profiles);
+  } catch (error) {
+    res.status(500).json({ message: "Error fetching profiles", error });
+  }
+});
 
-// Send OTP
-app.post('/send-otp', async (req, res) => {
-  const { email } = req.body;
-  console.log(email,process.env.EMAIL);
-  
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  const otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+
+// ✅ UPDATE loan status by _id
+app.put("/api/profiles/:id", async (req, res) => {
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: "subramaniyamsvss@gmail.com",
+      pass: "kyvz zgva mwnx vvdw", // ⚠️ Move this to environment variables for safety
+    },
+  });
 
   try {
-    let user = await Profile.findOne({ Email:email });
-    console.log(user);
-    
-    if (!user) user = new Profile({ email });
+    const { Loan_Status } = req.body;
 
-    user.otp = otp;
-    user.otpExpires = otpExpires;
-    await user.save();
+    // Find and update the loan status
+    const updatedProfile = await Profile.findByIdAndUpdate(
+      req.params.id,
+      { Loan_Status },
+      { new: true }
+    );
 
+    if (!updatedProfile) {
+      return res.status(404).json({ message: "Profile not found" });
+    }
+
+    // If approved, store details in ApprovedLoan collection
+    if (Loan_Status === "Approved") {
+      const approvedLoan = new ApprovedLoan({
+        user_id: updatedProfile.user_id,
+        Name: updatedProfile.Name,
+        Total_Income: updatedProfile.Total_Income,
+        Loan_Type: updatedProfile.Loan_Type,
+        Loan_Amount: updatedProfile.Loan_Amount,
+        Loan_Term: updatedProfile.Loan_Term,
+        Loan_Emi: updatedProfile.Loan_Emi,
+      });
+
+      // Save the approved loan data to the ApprovedLoan collection
+      await approvedLoan.save();
+    }
+
+    const subject =
+      Loan_Status === "Approved"
+        ? "🎉 Loan Approved - Congratulations!"
+        : "⚠️ Loan Application Status - Rejected";
+
+    const message =
+      Loan_Status === "Approved"
+        ? `Dear ${updatedProfile.Name},
+
+Congratulations! We are pleased to inform you that your loan application has been **approved**.
+
+Our team will reach out to you shortly to guide you through the next steps.
+
+Thank you for trusting **LoanPort**!
+
+Warm regards,  
+LoanPort Team`
+        : `Dear ${updatedProfile.Name},
+
+We regret to inform you that your loan application has been **rejected** due to incomplete or incorrect document submission.
+
+Please review your application and consider reapplying with the necessary corrections.
+
+If you have any questions, feel free to contact our support team.
+
+Sincerely,  
+LoanPort Team`;
+
+    // Send email notification
     await transporter.sendMail({
-      from: process.env.EMAIL,
-      to: email,
-      subject: 'Your OTP Code',
-      text: `Your OTP is ${otp}`,
+      from: '"LoanPort Notifications" <subramaniyamsvss@gmail.com>',
+      to: updatedProfile.Email,
+      subject,
+      text: message,
     });
 
-    res.status(200).json({ message: 'OTP sent to email.' });
+    res.json(updatedProfile);
   } catch (error) {
-    res.status(500).json({ error: 'Error sending OTP.' });
+    console.error("Error updating loan status:", error);
+    res.status(500).json({ message: "Error updating loan status", error });
   }
 });
 
-// Verify OTP
-app.post('/verify-otp', async (req, res) => {
-  const { email, otp } = req.body;
-
+app.get('/api/loan-stats', async (req, res) => {
   try {
-    const user = await Profile.findOne({ Email: email });
-    console.log(user.otp,otp);
-    
+    const totalAccounts = await Profile.countDocuments();
 
-    if (!user) {
-      return res.status(404).json({ error: 'User not found.' });
-    }
+    const loanTypes = ['Home Loan', 'Education Loan', 'Vehicle Loan', 'Personal Loan', 'Gold Loan'];
 
-    if (user.otp == otp ) {   //&& user.otpExpires > Date.now()
-      return res.status(200).json({ message: 'OTP verified successfully.' });
-    }
+    const pendingLoans = await Profile.aggregate([
+      { $match: { Loan_Status: 'Pending' } }, // Case-sensitive
+      { $group: { _id: "$Loan_Type", count: { $sum: 1 } } }
+    ]);
 
-    return res.status(400).json({ error: 'Invalid or expired OTP' });
+    const approvedLoans = await ApprovedLoan.aggregate([
+      { $group: { _id: "$Loan_Type", count: { $sum: 1 } } }
+    ]);
 
-  } catch (error) {
-    console.error('Error verifying OTP:', error);
-    res.status(500).json({ error: 'Server error while verifying OTP.' });
+    const stats = loanTypes.map((type) => {
+      const approved = approvedLoans.find(l => l._id === type)?.count || 0;
+      const pending = pendingLoans.find(l => l._id === type)?.count || 0;
+      return { label: type, approved, pending };
+    });
+
+    res.json({ totalAccounts, stats });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
-
-// Update Password
-app.post('/update-password', async (req, res) => {
-  const { email, newPassword } = req.body;
-  console.log(email, newPassword);
-  
-  try {
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    console.log('Hashed:', hashedPassword);
-    
-    const user = await Profile.findOne({ Email: email });
-    console.log('User:', user);
-    
-    if (!user) return res.status(404).json({ error: 'User not found.' });
-
-    user.Password = hashedPassword;
-    user.otp = undefined;
-    user.otpExpires = undefined;
-
-    await user.save();
-
-    res.status(200).json({ message: 'Password updated successfully.' });
-  } catch (error) {
-    console.error('Error updating password:', error);
-    res.status(500).json({ error: 'Error updating password.' });
-  }
-});
-
-
 
 
 app.listen(8000, () => {
-  console.log("Server is running on port 8000");
+  console.log("Port running successfully...");
 });
