@@ -12,7 +12,7 @@ const app = express();
 
 app.use(cookieParser());
 app.use(cors({
-    origin: 'https://loan-port-website.vercel.app',
+    origin: 'https://loan-port-website.vercel.app/',
     methods: ['GET', 'POST', 'PUT', 'DELETE'],
     credentials: true
 }));
