@@ -2,9 +2,15 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
+const bcrypt = require("bcrypt");
+const authenticate =require("./middleware/Authentication");
+const dotenv=require("dotenv");
+dotenv.config();
 const app = express();
 
+app.use(cookieParser());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -70,8 +76,8 @@ const nodemailer = require("nodemailer");
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "subramaniyamsvss@gmail.com", // ✅ Your email
-    pass: "eaar wunc qvtu ppaf", // ✅ App-specific password (not your email login pwd)
+    user: "loaneaseofficial@gmail.com",
+    pass: "ubcc aofy uuhj myao",
   },
 });
 
@@ -166,7 +172,7 @@ app.post("/profile_completion", async (req, res) => {
 
     // ✅ Send Email with user_id
     const mailOptions = {
-      from: "subramaniyamsvss@gmail.com",
+      from: "loaneaseofficial@gmail.com",
       to: Email,
       subject: "🎉 Profile Created Successfully!",
       html: `
@@ -310,8 +316,8 @@ app.post(
 
       // 🔹 Compose the email with attachments
       const mailOptions = {
-        from: "subramaniyamsvss@gmail.com",
-        to: "valarshan2000@gmail.com",
+        from: "loaneaseofficial@gmail.com",
+        to: "loaneaseofficial@gmail.com",
         subject: `📄 Document Submission for User ID: ${user_id}`,
         html: `
           <h3>📌 Profile Summary</h3>
@@ -387,8 +393,8 @@ app.post("/contact-msg", (req, res) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "subramaniyamsvss@gmail.com",
-      pass: "fqkz oibw gxjr whyd",
+      user: "loaneaseofficial@gmail.com",
+      pass: "erav gpxv tdji pfyz",
     },
   });
 
@@ -419,8 +425,8 @@ app.post("/contact-msg", (req, res) => {
   `;
 
   const mailOptions = {
-    from: "subramaniyamsvss@gmail.com",
-    to: "subramaniyamsvss@gmail.com",
+    from: "loaneaseofficial@gmail.com",
+    to: "loaneaseofficial@gmail.com",
     subject: "Client Query",
     html: emailContent,
   };
@@ -439,41 +445,53 @@ app.post("/contact-msg", (req, res) => {
 
 app.post("/signin", async (req, res) => {
   const { userid, password } = req.body;
-
-  // Validation
-  if (!userid || !password) {
-    return res
-      .status(400)
-      .json({ message: "User ID and Password are required." });
-  }
-
+  const SECRET_KEY=process.env.JWT_SECRET;
+  console.log(userid,password,SECRET_KEY);
+  
   try {
-    // Match with MongoDB fields
-    const user = await Profile.findOne({ user_id: userid, Password: password });
-
+    const user = await Profile.findOne({ user_id:userid });
+    console.log(user);
     if (!user) {
-      return res
-        .status(401)
-        .json({ message: "Invalid credentials. Please try again." });
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    
+    const isMatch = password === user.Password;
+    console.log(isMatch);
+    
+    if (!isMatch) {
+      return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const userData = {
-      user_id: user.user_id,
-      Name: user.Name,
-      Email: user.Email,
-      DOB: user.DOB,
-    };
+    // Create JWT
+    const token = jwt.sign({ userId: user.user_id }, SECRET_KEY, { expiresIn: "1d" });
 
-    res.status(200).json({
-      status: "success",
-      message: "Login successful",
-      user: userData,
+    // Send token in HTTP-only cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production", // only true in production with HTTPS
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
-  } catch (error) {
-    console.error("Error during signin:", error);
-    res.status(500).json({ message: "Server error. Please try again later." });
+
+    res.status(200).json({ message: "Login successful",userid:user.user_id });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 });
+
+app.post("/logout", (req, res) => {
+  res.clearCookie("token", {
+    httpOnly: true,
+    sameSite: "strict",
+    secure: process.env.NODE_ENV === "production",
+  });
+  res.status(200).json({ message: "Logged out successfully" });
+});
+
+
+
 
 // ✅ GET profiles based on loan status
 app.get("/api/profiles", async (req, res) => {
@@ -500,8 +518,8 @@ app.put("/api/profiles/:id", async (req, res) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: "subramaniyamsvss@gmail.com",
-      pass: "kyvz zgva mwnx vvdw", // ⚠️ Move this to environment variables for safety
+      user: "loaneaseofficial@gmail.com",
+      pass: "rvhc nbjb lccf bkpj", // ⚠️ Move this to environment variables for safety
     },
   });
 
@@ -565,7 +583,7 @@ LoanPort Team`;
 
     // Send email notification
     await transporter.sendMail({
-      from: '"LoanPort Notifications" <subramaniyamsvss@gmail.com>',
+      from: '"LoanPort Notifications" <loaneaseofficial@gmail.com>',
       to: updatedProfile.Email,
       subject,
       text: message,
@@ -605,6 +623,77 @@ app.get('/api/loan-stats', async (req, res) => {
     res.status(500).json({ error: "Failed to fetch stats" });
   }
 });
+
+
+// ADMIN ROLE
+const ADMIN_EMAIL = "loaneaseofficial@gmail.com";
+let otpStore = {}; // { email: { otp: '123456', expiresAt: timestamp } }
+
+// ✅ Send OTP
+app.post("/api/admin/send-otp", async (req, res) => {
+  const { email } = req.body;
+
+  if (email !== ADMIN_EMAIL) {
+    return res.status(403).json({ success: false, message: "You are not the admin" });
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 mins expiry
+  otpStore[email] = { otp, expiresAt };
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: ADMIN_EMAIL,
+      pass: "runj rgtg aqkx qcry",
+    },
+  });
+
+  try {
+    await transporter.sendMail({
+      from: `"LoanEase Admin Login" <${ADMIN_EMAIL}>`,
+      to: email,
+      subject: "Admin OTP Verification",
+      text: `Your OTP for admin login is: ${otp}`,
+    });
+
+    res.json({ success: true, message: "OTP sent successfully" });
+  } catch (err) {
+    console.error("Email error:", err);
+    res.status(500).json({ success: false, message: "Failed to send OTP" });
+  }
+});
+
+// ✅ Verify OTP
+app.post("/api/admin/verify-otp", (req, res) => {
+  const { email, otp } = req.body;
+  const record = otpStore[email];
+
+  if (!record || Date.now() > record.expiresAt) {
+    return res.status(400).json({ success: false, message: "OTP expired or not found" });
+  }
+
+  if (record.otp !== otp) {
+    return res.status(401).json({ success: false, message: "Invalid OTP" });
+  }
+
+  delete otpStore[email];
+  res.json({ success: true, message: "OTP verified. Redirecting to admin portal..." });
+});
+
+
+app.get("/get_user", authenticate, async (req, res) => {
+  try {
+    const user = await Profile.findById(req.user.userId);
+    if (!user) return res.status(401).json({ message: "User not found" });
+
+    res.status(200).json(user);
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
 
 
 app.listen(8000, () => {
