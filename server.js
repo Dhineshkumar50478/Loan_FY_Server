@@ -2,21 +2,10 @@ const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
 const mongoose = require("mongoose");
-const jwt = require("jsonwebtoken");
-const cookieParser = require("cookie-parser");
-const bcrypt = require("bcrypt");
-const authenticate =require("./middleware/Authentication");
-const dotenv=require("dotenv");
-dotenv.config();
+const PORT=8000;
 const app = express();
 
-app.use(cookieParser());
-app.use(cors({
-    origin: 'https://loan-port-website.vercel.app/',
-    methods: ['GET', 'POST', 'PUT', 'DELETE'],
-    credentials: true
-}));
-
+app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -450,53 +439,41 @@ app.post("/contact-msg", (req, res) => {
 
 app.post("/signin", async (req, res) => {
   const { userid, password } = req.body;
-  const SECRET_KEY=process.env.JWT_SECRET;
-  console.log(userid,password,SECRET_KEY);
-  
+
+  // Validation
+  if (!userid || !password) {
+    return res
+      .status(400)
+      .json({ message: "User ID and Password are required." });
+  }
+
   try {
-    const user = await Profile.findOne({ user_id:userid });
-    console.log(user);
+    // Match with MongoDB fields
+    const user = await Profile.findOne({ user_id: userid, Password: password });
+
     if (!user) {
-      return res.status(404).json({ message: "User not found" });
-    }
-    
-    
-    const isMatch = password === user.Password;
-    console.log(isMatch);
-    
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid credentials" });
+      return res
+        .status(401)
+        .json({ message: "Invalid credentials. Please try again." });
     }
 
-    // Create JWT
-    const token = jwt.sign({ userId: user.user_id }, SECRET_KEY, { expiresIn: "1d" });
+    const userData = {
+      user_id: user.user_id,
+      Name: user.Name,
+      Email: user.Email,
+      DOB: user.DOB,
+    };
 
-    // Send token in HTTP-only cookie
-    res.cookie("token", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production", // only true in production with HTTPS
-      sameSite: "strict",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
+    res.status(200).json({
+      status: "success",
+      message: "Login successful",
+      user: userData,
     });
-
-    res.status(200).json({ message: "Login successful",userid:user.user_id });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ message: "Server error" });
+  } catch (error) {
+    console.error("Error during signin:", error);
+    res.status(500).json({ message: "Server error. Please try again later." });
   }
 });
-
-app.post("/logout", (req, res) => {
-  res.clearCookie("token", {
-    httpOnly: true,
-    sameSite: "strict",
-    secure: process.env.NODE_ENV === "production",
-  });
-  res.status(200).json({ message: "Logged out successfully" });
-});
-
-
-
 
 // ✅ GET profiles based on loan status
 app.get("/api/profiles", async (req, res) => {
@@ -687,20 +664,6 @@ app.post("/api/admin/verify-otp", (req, res) => {
 });
 
 
-app.get("/get_user", authenticate, async (req, res) => {
-  try {
-    const user = await Profile.findById(req.user.userId);
-    if (!user) return res.status(401).json({ message: "User not found" });
-
-    res.status(200).json(user);
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
-});
-
-
-
-
-app.listen(8000, () => {
-  console.log("Port running successfully...");
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT} successfully....`);
 });
