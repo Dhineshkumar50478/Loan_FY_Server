@@ -663,6 +663,85 @@ app.post("/api/admin/verify-otp", (req, res) => {
   res.json({ success: true, message: "OTP verified. Redirecting to admin portal..." });
 });
 
+//forgot password
+
+// ✅ Send OTP
+app.post("/api/otp/send-otp", async (req, res) => {
+  const { email } = req.body;
+
+  const user=await Profile.findOne({ Email:email });
+
+  if (!user) {
+    return res.status(403).json({ success: false, message: "Not registered? Create an account first" });
+  }
+
+  const otp = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = Date.now() + 5 * 60 * 1000; // 5 mins expiry
+  otpStore[email] = { otp, expiresAt };
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: ADMIN_EMAIL,
+      pass: "runj rgtg aqkx qcry",
+    },
+  });
+
+  try {
+    await transporter.sendMail({
+      from: `"LoanEase Admin Login" <${ADMIN_EMAIL}>`,
+      to: email,
+      subject: "OTP Verification",
+      text: `Your OTP for password reset is: ${otp}`,
+    });
+
+    res.json({ success: true, message: "OTP sent successfully" });
+  } catch (err) {
+    console.error("Email error:", err);
+    res.status(500).json({ success: false, message: "Failed to send OTP" });
+  }
+});
+
+// ✅ Verify OTP
+app.post("/api/otp/verify-otp", (req, res) => {
+  const { email, otp } = req.body;
+  const record = otpStore[email];
+
+  if (!record || Date.now() > record.expiresAt) {
+    return res.status(400).json({ success: false, message: "OTP expired or not found" });
+  }
+
+  if (record.otp !== otp) {
+    return res.status(401).json({ success: false, message: "Invalid OTP" });
+  }
+
+  delete otpStore[email];
+  res.json({ success: true, message: "OTP verified. Successfully" });
+});
+
+// ✅ Update Password
+app.post("/api/otp/updatePassword", async (req, res) => {
+  const { email, newPassword } = req.body;
+  console.log(email,newPassword);
+  
+
+  try {
+    // Check if the user exists
+    const user = await Profile.findOne({ Email: email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    // Update password
+    await Profile.updateOne({ Email: email }, { Password: newPassword });
+
+    res.status(201).json({ success: true, message: "Password updated successfully" });
+  } catch (err) {
+    console.error("Password update error:", err);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT} successfully....`);
